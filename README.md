@@ -1,35 +1,34 @@
 
 # Perspective Scanner
 
-An interactive document scanner that demonstrates the mathematics behind perspective correction and digital image processing.
+Ever take a photo of a document at an angle and it looks squashed and skewed? This project fixes exactly that and shows you the maths while it does the magic. Drag the four dots onto the corners of the page and watch a flat scan appear.
 
 Developed by **Team BMTL** for the **CIS GV Hackathon 2026**.
 
 ## Features
-- **Perspective Correction:** Flatten a tilted document by adjusting its four corners.
+- **Perspective Correction:** Drag the four corners onto your page and it gets flattened out.
 - **Grayscale:** Convert the image into shades of grey.
 - **Black and White:** Convert the image into black and white with stronger contrast.
 - **Enhance:** Improve the image's colours and overall appearance.
-- **Plain Crop:** Compare perspective correction with a simple crop.
-- **Forward Mapping:** Explore the difference between forward and backward mapping.
+- **Plain Crop:** Perspective correction compared to a simple crop.
+- **Forward Mapping:** Shows the difference between forward and backward mapping.
 - **Magnifier:** Zoom in on the document's corners.
-- **Outline:** Display the document boundaries and selected corners.
-- **Pixel Tracing:** Explore how pixels are mapped between the original and corrected images.
-- **Matrix Visualisation:** See the mathematical calculations behind the transformation.
+- **Pixel Tracing:** Hhover over the scan to see where a pixel came from in the photo.
+- **Matrix view:** Sshows the numbers behind the transform, updating as you move the dots.
 
 
 ## How It Works
-A photograph taken at an angle makes a rectangular document appear distorted. The scanner corrects this using a mathematical technique called **homography**.
+When you take a picture of a page from an angle, it no longer looks like a rectangle. Instead, it looks like a distorted shape. A perspective transform fixes this by turning the shape back into a rectangle. The mathematical process behind this is called a **homography**.
 
-1. **Selecting the document:** Four points are placed on the corners of the document, forming a quadrilateral.
-2. **Building the equations:** Each corner provides two equations, giving a system of eight equations with eight unknowns.
+1. You place four dots on the corners of the page.
+2. Each corner gives two equations (one for x, one for y), so four corners give eight equations for eight unknown numbers.
 3. **Solving the matrix:** Gaussian elimination solves the equations to calculate the homography matrix, which describes the perspective transformation.
-4. **Mapping the pixels:** The scanner uses backward mapping to find the corresponding position of each pixel in the original photograph.
-5. **Calculating pixel colours:** Bilinear interpolation samples neighbouring pixels to calculate the colour at each position, helping produce a smoother result.
-6. **Processing the image:** The flattened image can then be modified using grayscale, black-and-white and other available image-processing options.
-
-The result is a rectangular image of the document, with the perspective distortion corrected.
+4. For every pixel in the flat scan, the matrix tells us where to look in the original photo. We go backwards like this on purpose. Pushing photo pixels forward leaves holes in the result.
+5. The spot we land on usually falls between pixels, so we blend the four nearest ones (bilinear interpolation) to get a smooth colour.
+6. Greyscale, black and white and Enhance are applied last, pixel by pixel, and don't change the shape of the page.
 
 ## Privacy
 
 Images are processed directly in the browser. Uploaded photographs are not sent to an external server.
+
+<sub>We used AI to help with our code and to talk through and flesh out our logic.</sub>
