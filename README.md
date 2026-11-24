@@ -1,1 +1,1 @@
-# GV_BMTL_project
+# Document Scanner for GVHackathon
