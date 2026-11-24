@@ -30,18 +30,22 @@ const Geometry = (() => {
     return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
   }
 
-  // engine.js may use either naming, depending on whether the rename has landed.
-  const findFunction = (...names) =>
-    names.map((n) => window[n]).find((f) => typeof f === "function");
+  
+  const getBuild = () =>
+    typeof buildSystem === "function" ? buildSystem
+    : typeof numbers_looker === "function" ? numbers_looker : null;
+  const getSolver = () =>
+    typeof solveLinear === "function" ? solveLinear
+    : typeof solve_numbers === "function" ? solve_numbers : null;
 
   // Solves for the 8 numbers (h8 is fixed at 1) that send the four "from" points
   // onto the four "to" points. Returns null if the numbers blow up.
   function solve(from, to) {
-    const build = findFunction("buildSystem", "numbers_looker");
-    const solveLinear = findFunction("solveLinear", "solve_numbers");
-    if (!build || !solveLinear) throw new Error("engine.js did not load");
-    const [A, B] = build(from, to);
-    const h = solveLinear(A, B);
+    const buildFn = getBuild();
+    const solveFn = getSolver();
+    if (!buildFn || !solveFn) throw new Error("engine.js did not load");
+    const [A, B] = buildFn(from, to);
+    const h = solveFn(A, B);
     return h && h.every(Number.isFinite) ? h : null;
   }
 

@@ -74,7 +74,9 @@ const ProofLayers = (() => {
     const hgt = flatHeight || (flatCanvas ? flatCanvas.height : 0);
 
     const fCtx = flatOverlay.getContext("2d");
-    const sCtx = sourceOverlay.getContext("2d");
+    const sCtx = sourceOverlay.getContext("2d");    
+    const fScale = flatOverlay.width / (flatOverlay.getBoundingClientRect().width || flatOverlay.width);
+    const sScale = sourceOverlay.width / (sourceOverlay.getBoundingClientRect().width || sourceOverlay.width);
     fCtx.clearRect(0, 0, flatOverlay.width, flatOverlay.height);
     sCtx.clearRect(0, 0, sourceOverlay.width, sourceOverlay.height);
 
@@ -83,8 +85,8 @@ const ProofLayers = (() => {
     const steps = 8;
     fCtx.strokeStyle = "rgba(37, 99, 235, 0.35)";
     sCtx.strokeStyle = "rgba(37, 99, 235, 0.45)";
-    fCtx.lineWidth = 1;
-    sCtx.lineWidth = 1;
+    fCtx.lineWidth = 1.5 * fScale;
+    sCtx.lineWidth = 1.5 * sScale;
 
     const drawMappedLine = (x1, y1, x2, y2) => {
       const a = mapPixel(h, x1, y1);
@@ -136,7 +138,8 @@ const ProofLayers = (() => {
     }
     const ctx = state.sourceOverlay.getContext("2d");
     ctx.beginPath();
-    ctx.arc(hit.x, hit.y, 5, 0, Math.PI * 2);
+    const r = 5 * (state.sourceOverlay.width / (state.sourceOverlay.getBoundingClientRect().width || state.sourceOverlay.width));
+    ctx.arc(hit.x, hit.y, r, 0, Math.PI * 2);
     ctx.fillStyle = "#dc2626";
     ctx.fill();
     renderTracerInfo(pt.x, pt.y, hit);

@@ -356,6 +356,7 @@
     if (!matrix) return;
 
     const size = Warp.render(matrix, w, h, 1);
+    if (!size) return; // no photo loaded, nothing to export
     const pixels = Warp.tone(size.width, size.height, settings.grey / 100, settings.cutoff, settings.enhance);
     const out = document.createElement("canvas");
     out.width = size.width;

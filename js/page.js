@@ -15,6 +15,7 @@
     { rootMargin: "-30% 0px -60% 0px" }
   );
   for (const link of links) {
+    if (!link.hash) continue;
     const section = document.querySelector(link.hash);
     if (section) navObserver.observe(section);
   }
