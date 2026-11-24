@@ -1,0 +1,202 @@
+/* Where things go on the page. How individual pieces look is in components.css. */
+
+/* ---- header ---- */
+.site-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.head-row { display: flex; align-items: center; gap: 24px; height: var(--header-h); }
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: auto;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.brand-mark { width: 28px; height: 28px; color: var(--accent); }
+.site-nav { display: flex; gap: 4px; }
+
+/* ---- hero ---- */
+.hero { padding-top: 44px; padding-bottom: 28px; }
+/* Glass title: see-through grey letters with a thin edge and soft glow, a soft
+   light behind them, and "flat scan" in green glass with a highlighter that sweeps in. */
+.hero { position: relative; isolation: isolate; }
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -10% 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 55% 60% at 40% 45%, rgba(238, 241, 248, 0.10), transparent 70%),
+    radial-gradient(ellipse 30% 40% at 72% 70%, rgba(200, 255, 61, 0.10), transparent 70%),
+    radial-gradient(ellipse 60% 45% at 50% 115%, rgba(200, 255, 61, 0.16), transparent 70%);
+}
+.hero h1 {
+  animation: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  font-family: "Montserrat", var(--font-display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 6.4vw, 5rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  padding-right: 0.06em;
+  /* Clean, bright letters with no outline: white at the top, softly greyer below,
+     like light falling on them, plus a soft glow around the whole title. */
+  background: linear-gradient(180deg, #ffffff 0%, #ffffff 35%, rgba(205, 212, 226, 0.92) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 28px rgba(238, 241, 248, 0.16));
+}
+.hero h1 em {
+  position: relative;
+  display: inline-block;
+  padding-right: 0.06em;
+  background: linear-gradient(180deg, #ecffb0 0%, #c8ff3d 55%, #a6e41c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 22px rgba(200, 255, 61, 0.45));
+}
+.hero h1 em::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: -0.06em;
+  right: -0.06em;
+  top: 0.02em;
+  bottom: -0.02em;
+  border-radius: 0.12em;
+  background: rgba(200, 255, 61, 0.22);
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: sweep 2.2s 0.9s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+@keyframes sweep { to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .hero h1 em::after { transform: none; }
+}
+.lead {
+  max-width: 52ch;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 1.15rem;
+  animation: rise 0.7s 0.12s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* ---- the scanner ---- */
+/* The stage height follows the window so the photo, matrix and scan all fit on the
+   first screen of a laptop. */
+.studio {
+  --stage-h: clamp(300px, calc(100vh - 450px), 560px);
+  /* The scan is the result, so it gets the biggest box. */
+  --scan-h: clamp(380px, calc(100vh - 300px), 760px);
+  padding-bottom: 96px;
+}
+
+.bench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr) 248px;
+  gap: 20px;
+  align-items: start;
+}
+.panel { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 40px; }
+.actions { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+
+.dock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 36px;
+  margin-top: 12px;
+  padding: 18px 22px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.dock-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 22px; min-height: 40px; }
+
+/* ---- long-form sections ---- */
+.how, .deeper { padding: 88px 0; border-top: 1px solid var(--line); background: rgba(11, 13, 18, 0.82); }
+
+/* Soft backlight behind each section, like the one behind the title:
+   a grey glow and a smaller green one, placed differently in each section. */
+.studio {
+  background:
+    radial-gradient(ellipse 45% 40% at 55% 45%, rgba(238, 241, 248, 0.10), transparent 70%),
+    radial-gradient(ellipse 30% 30% at 62% 60%, rgba(200, 255, 61, 0.09), transparent 70%);
+}
+.story {
+  background:
+    radial-gradient(ellipse 50% 35% at 30% 30%, rgba(238, 241, 248, 0.10), transparent 70%),
+    radial-gradient(ellipse 35% 30% at 85% 70%, rgba(200, 255, 61, 0.09), transparent 70%);
+}
+.how {
+  background:
+    radial-gradient(ellipse 45% 45% at 75% 35%, rgba(238, 241, 248, 0.10), transparent 70%),
+    radial-gradient(ellipse 30% 35% at 20% 75%, rgba(200, 255, 61, 0.09), transparent 70%),
+    rgba(11, 13, 18, 0.82);
+}
+.deeper {
+  background:
+    radial-gradient(ellipse 40% 50% at 20% 40%, rgba(200, 255, 61, 0.09), transparent 70%),
+    radial-gradient(ellipse 50% 45% at 70% 60%, rgba(238, 241, 248, 0.10), transparent 70%),
+    rgba(11, 13, 18, 0.82);
+}
+.section-head { margin-bottom: 40px; }
+.section-head p { margin-top: 12px; color: var(--muted); max-width: 34ch; }
+
+.bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.tile-a { grid-column: span 5; }
+.tile-b { grid-column: span 7; }
+.tile-c { grid-column: span 7; }
+.tile-d { grid-column: span 5; }
+
+.split { display: grid; grid-template-columns: minmax(220px, 1fr) 2fr; gap: 56px; }
+.split .section-head { position: sticky; top: calc(var(--header-h) + 28px); align-self: start; margin-bottom: 0; }
+
+/* ---- footer ---- */
+.site-foot { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--muted); font-size: 0.9rem; }
+.foot-row { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+/* ---- narrower screens ---- */
+@media (max-width: 1100px) {
+  /* Photo and scan side by side, the matrix underneath. */
+  .bench { grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); }
+  .bench > :nth-child(3) { grid-column: 1 / -1; }
+  .studio { --stage-h: clamp(260px, 44vw, 520px); --scan-h: clamp(320px, 58vw, 640px); }
+}
+
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; gap: 28px; }
+  .split .section-head { position: static; }
+  .tile-a, .tile-b, .tile-c, .tile-d { grid-column: 1 / -1; }
+  .site-nav { display: none; }
+}
+
+@media (max-width: 720px) {
+  /* One column, with the matrix between the photo and the scan. */
+  .bench { grid-template-columns: 1fr; }
+  .bench > :nth-child(1) { order: 1; }
+  .bench > :nth-child(3) { order: 2; grid-column: auto; }
+  .bench > :nth-child(2) { order: 3; }
+  .studio { --stage-h: clamp(260px, 82vw, 520px); --scan-h: clamp(360px, 120vw, 620px); }
+  .hero { padding-top: 36px; }
+  .how, .deeper { padding: 56px 0; }
+}
+
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .head-link { display: none; }
+  .dock { padding: 16px; gap: 18px; }
+}
