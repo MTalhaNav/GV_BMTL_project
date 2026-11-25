@@ -305,6 +305,17 @@ y = (h3·u + h4·v + h5) / (h6·u + h7·v + 1)</pre>
               <p><strong>Keyboard.</strong> Click the photo, press 1 to 4 to pick a dot, then use the arrow keys to move it. Hold Shift to move 10 times further.</p>
             </div>
           </details>
+          <details class="reveal-on-scroll" data-reveal="left">
+            <summary>Under the hood</summary>
+            <div class="deeper-body">
+              <p>All the state lives in one <code>settings</code> object in <code>main.js</code>, and the drawing code never reads the page. <code>invalidate({warp, preview})</code> gathers every change into a single <code>requestAnimationFrame</code>, so many changes in one frame cost one redraw.</p>
+              <p>The page moves through four phases: start, demo, ready and moved. Grabbing a dot during the demo cancels the animation.</p>
+              <p>Download always re-renders the normal backward scan at full size with the current look settings, then calls <code>invalidate()</code>, because the shared buffers were overwritten.</p>
+              <p><code>ProofLayers</code> draws the grids, the matrix and the pixel tracer: <code>init({sourceCanvas, flatCanvas, sourceOverlay, flatOverlay, cropCanvas, matrixEl, tracerInfoEl, mode})</code>, <code>update({h, flatWidth, flatHeight})</code> and <code>setMode('warp' | 'crop')</code>. It uses the engine's <code>position_of_pixel(h, q, v)</code>, and marks the matrix as perspective or affine.</p>
+              <p>The colours of the dots, outline and magnifier are read from the CSS variables at startup, so <code>:root</code> in <code>base.css</code> is the single palette.</p>
+              <p>Keyboard: focus the photo, press 1 to 4 to pick a dot, and use the arrow keys to nudge it (hold Shift for 10 times further).</p>
+            </div>
+          </details>
 
           <h3 class="source-title reveal-on-scroll" data-reveal="up">Where to look in the source</h3>
           <dl class="source-map reveal-on-scroll" data-reveal="up">

@@ -1,5 +1,4 @@
 // Finding the 8 numbers using Gaussian elimination
-// by Syed ibraheem
 
 // turn the 4 corners into 8 numbers
 function numbers_looker(flat, dots) {
@@ -33,7 +32,7 @@ function solve_numbers(A, B) {
                }
           }
 
-          // if even the biggest is basically zero, the dots are unusable
+          // if even the biggest is zero, the dots are unusable
           if (Math.abs(A[biggest][column]) < 1e-10) { // 1e-10 = basically zero
                return null;
           }

@@ -81,4 +81,4 @@ assets/
 
 Images are processed directly in the browser. Uploaded photographs are not sent to an external server.
 
-<sub>We used AI to help with our code and to talk through and flesh out our logic.</sub>
+<sub>As AI usage was allowed, we used AI to help with our code and to talk through and flesh out our logic.</sub>
