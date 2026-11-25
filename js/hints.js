@@ -1,4 +1,3 @@
-// Added by Syed Ibraheem (25 Nov 2026)
 // Two first-time hints, shown every time the page loads:
 // 1. A bubble next to dot 1 on the photo: "Drag any corner…". It fades away as
 //    soon as a dot is grabbed.
