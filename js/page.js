@@ -15,8 +15,7 @@
     { rootMargin: "-30% 0px -60% 0px" }
   );
   for (const link of links) {
-    if (!link.hash) continue;
-    const section = document.querySelector(link.hash);
+    const section = link.hash && document.querySelector(link.hash); // links without a #section are skipped
     if (section) navObserver.observe(section);
   }
 
@@ -24,9 +23,7 @@
   // resets once it has left, so scrolling back down plays it again.
   const revealObserver = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        entry.target.classList.toggle("is-visible", entry.isIntersecting);
-      }
+      for (const entry of entries) entry.target.classList.toggle("is-visible", entry.isIntersecting);
     },
     { rootMargin: "0px 0px -8% 0px" }
   );
