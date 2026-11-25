@@ -4,8 +4,8 @@ const ProofLayers = (() => {
   const GRID_STEPS = 8;
   const TRACER_HINT = "Hover the flattened scan to trace pixel math.";
   // Colours of what is drawn over the images.
-  const GRID_ON_SCAN = "rgba(37, 99, 235, 0.35)";
-  const GRID_ON_PHOTO = "rgba(37, 99, 235, 0.45)";
+  const GRID_ON_SCAN = "rgba(229, 184, 11, 0.45)";
+  const GRID_ON_PHOTO = "rgba(229, 184, 11, 0.45)";
   const TRACER_DOT = "#dc2626";
 
   const state = {
