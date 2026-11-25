@@ -1,6 +1,5 @@
 
 # Document Scanner
-<img src="assets/preview-scanner.png" alt="The scanner" width="800">
 
 Ever take a photo of a document at an angle and it looks squashed and skewed? This project fixes exactly that and shows you the maths while it does the magic. Drag the four dots onto the corners of the page and watch a flat scan appear.
 
