@@ -75,7 +75,6 @@ js/
 assets/
   sample.jpg            the demo photo
   favicon.svg           the tab icon
-  preview-*.png         the screenshots used in this README
   fonts/                Inter and JetBrains Mono, with their licences
 ```
 
