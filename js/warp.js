@@ -5,10 +5,15 @@ const Warp = (() => {
   let srcW = 0;
   let srcH = 0;
 
-  // Two scratch buffers are reused for every frame instead of allocating new ones.
-  // warped holds the raw flattened colours, toned holds the grey/threshold version.
+  // Three scratch buffers are reused for every frame instead of allocating new ones.
+  //   warped    the raw flattened colours
+  //   enhanced  warped after Enhance, kept so greyscale and cut-off slider moves do
+  //             not have to redo the expensive part
+  //   graded    the greyscale or black and white version
   let warped = new Uint8ClampedArray(0);
-  let toned = new Uint8ClampedArray(0);
+  let enhanced = new Uint8ClampedArray(0);
+  let graded = new Uint8ClampedArray(0);
+  let enhancedValid = false; // false whenever warped has changed since Enhance last ran
 
   function setSource(imageData) {
     src = imageData.data;
@@ -22,7 +27,9 @@ const Warp = (() => {
     const bytes = pixels * 4;
     if (warped.length < bytes) {
       warped = new Uint8ClampedArray(bytes);
-      toned = new Uint8ClampedArray(bytes);
+      enhanced = new Uint8ClampedArray(bytes);
+      graded = new Uint8ClampedArray(bytes);
+      enhancedValid = false;
     }
   }
 
@@ -36,6 +43,7 @@ const Warp = (() => {
   // Returns the size actually rendered.
   function render(h, outW, outH, scale) {
     if (!src) return null;
+    enhancedValid = false;
     const rw = Math.max(1, Math.round(outW * scale));
     const rh = Math.max(1, Math.round(outH * scale));
     reserve(rw * rh);
@@ -117,6 +125,7 @@ const Warp = (() => {
   // box   upright box around the dots, so we only visit photo pixels that can matter
   function renderForward(hf, outW, outH, box) {
     if (!src) return null;
+    enhancedValid = false;
     reserve(outW * outH);
     const out = warped;
     out.fill(0, 0, outW * outH * 4); // everything starts as a gap
@@ -158,11 +167,6 @@ const Warp = (() => {
     return { width: outW, height: outH };
   }
 
-  // Greyscale and threshold are one rule per pixel, applied to the flattened image.
-  //   grey       0..1, how far to pull the colours towards grey
-  //   threshold  0 means off. Anything above is a cut-off level, and pixels become
-  //              pure black or pure white around it. Wins over grey.
-  // Returns a byte view that is ready to wrap in an ImageData.
   // Scratch space for Enhance: the paper brightness, measured on a coarse grid.
   let grid = new Float32Array(0);
   let grid2 = new Float32Array(0);
@@ -316,41 +320,48 @@ const Warp = (() => {
 
   // Colour rules per pixel, in order: Enhance first, then greyscale or the black
   // and white cut-off on top. None of them moves a pixel, so the shape never changes.
+  //   grey       0..1, how far to pull the colours towards grey
+  //   threshold  0 means off. Anything above is a cut-off level, and pixels become
+  //              pure black or pure white around it. Wins over grey.
+  // Returns a byte view that is ready to wrap in an ImageData.
   function tone(width, height, grey, threshold, enhanceOn = false) {
     const n = width * height * 4;
-    if (!enhanceOn && grey === 0 && threshold === 0) return warped.subarray(0, n);
-
-    let a = warped;
-    const b = toned;
+    let from = warped;
     if (enhanceOn) {
-      enhance(warped, toned, width, height);
-      if (grey === 0 && threshold === 0) return toned.subarray(0, n);
-      a = toned; // the next rule works on the enhanced colours, in place
+      // Enhance only depends on the warped pixels, so keep its result until they change.
+      if (!enhancedValid) {
+        enhance(warped, enhanced, width, height);
+        enhancedValid = true;
+      }
+      from = enhanced;
     }
+    if (grey === 0 && threshold === 0) return from.subarray(0, n);
+
+    const out = graded;
     if (threshold > 0) {
       for (let i = 0; i < n; i += 4) {
         // Integer luminance, weights 77/150/29 out of 256 (about 0.30/0.59/0.11).
-        const lum = (77 * a[i] + 150 * a[i + 1] + 29 * a[i + 2]) >> 8;
+        const lum = (77 * from[i] + 150 * from[i + 1] + 29 * from[i + 2]) >> 8;
         const v = lum > threshold ? 255 : 0;
-        b[i] = v;
-        b[i + 1] = v;
-        b[i + 2] = v;
-        b[i + 3] = a[i + 3];
+        out[i] = v;
+        out[i + 1] = v;
+        out[i + 2] = v;
+        out[i + 3] = from[i + 3];
       }
     } else {
       const k = Math.round(grey * 256); // mix amount in 0..256, avoids float maths
       for (let i = 0; i < n; i += 4) {
-        const r = a[i];
-        const g = a[i + 1];
-        const bl = a[i + 2];
-        const lum = (77 * r + 150 * g + 29 * bl) >> 8;
-        b[i] = r + (((lum - r) * k) >> 8);
-        b[i + 1] = g + (((lum - g) * k) >> 8);
-        b[i + 2] = bl + (((lum - bl) * k) >> 8);
-        b[i + 3] = a[i + 3];
+        const r = from[i];
+        const g = from[i + 1];
+        const b = from[i + 2];
+        const lum = (77 * r + 150 * g + 29 * b) >> 8;
+        out[i] = r + (((lum - r) * k) >> 8);
+        out[i + 1] = g + (((lum - g) * k) >> 8);
+        out[i + 2] = b + (((lum - b) * k) >> 8);
+        out[i + 3] = from[i + 3];
       }
     }
-    return toned.subarray(0, n);
+    return out.subarray(0, n);
   }
 
   return { setSource, reserve, render, renderForward, tone };

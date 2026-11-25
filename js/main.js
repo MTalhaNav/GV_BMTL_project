@@ -10,17 +10,15 @@
 
   const $ = (id) => document.getElementById(id);
   // Visitors who ask their device for less motion get the result without the animation.
-  const reducedMotion = window.matchMedia ? matchMedia("(prefers-reduced-motion: reduce)") : { matches: false };
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
-  // ---- page elements ----
+  // Page elements
   const photo = $("photo");
   const photoGrid = $("photo-grid");
   const photoDots = $("photo-dots");
   const photoStage = $("photo-stage");
   const scanStage = $("scan-stage");
-  const loupeCanvas = $("loupe");
   const flat = $("flat");
-  const flatGrid = $("flat-grid");
   const cropView = $("crop-view");
 
   const statusEl = $("status");
@@ -72,9 +70,8 @@
   };
   const WARNINGS = new Set(["invalid", "notImage", "unreadable", "sampleError", "problem"]);
 
-  // ---- state ----
-  // Every control writes into settings. The drawing code reads from here, never
-  // from the page, so a frame does no DOM lookups.
+  // State. Every control writes into settings. The drawing code reads from here,
+  // never from the page, so a frame does no DOM lookups.
   const shapeRatio = (id) => CONFIG.pageShapes.find((s) => s.id === id).ratio;
   const DEFAULTS = {
     shape: CONFIG.defaultShape,
@@ -92,7 +89,9 @@
   let dots = null;
   let loupe = null;
   let photoName = CONFIG.sampleName;
+  let hasPhoto = false;
   let isSample = false;
+  let loadId = 0; // counts photo loads, so a slow older load cannot replace a newer one
   // Where we are in the visit: "start" -> "demo" -> "ready" -> "moved".
   let phase = "start";
   let statusKey = "";
@@ -108,7 +107,7 @@
   let rafId = 0;
   let settleTimer = 0;
 
-  // ---- small helpers ----
+  // Small helpers
   const flatHeight = () => Math.round(CONFIG.flatWidth * settings.ratio);
   const clamp = (v, lo, hi) => Math.min(Math.max(v, lo), hi);
 
@@ -122,9 +121,6 @@
     statusEl.textContent = MESSAGES[key];
     statusEl.classList.toggle("is-warning", WARNINGS.has(key));
   }
-
-  // The status line to show when nothing is wrong.
-  const calmStatus = () => (phase === "moved" ? "moved" : phase);
 
   function setNote(text) {
     if (text === noteText) return;
@@ -157,10 +153,10 @@
     input.style.setProperty("--fill", pct + "%");
   }
 
-  // phase4.js also records whether the matrix is a pure rotate-and-shear (h6 and
-  // h7 are zero) or a real perspective.
+  // phase4.js records whether the matrix is a pure rotate-and-shear (h6 and h7 are
+  // zero) or a real perspective.
   function showMatrixType() {
-    const type = matrixEl.dataset.transformType || "affine";
+    const type = matrixEl.dataset.transformType;
     setText(matrixTag, type === "perspective" ? "Perspective" : "Rotate and shear only");
     matrixTag.dataset.kind = type;
   }
@@ -173,29 +169,20 @@
     setText(livePersp, `h6 = ${sci(matrix[6])}    h7 = ${sci(matrix[7])}`);
   }
 
-  // Returns the 8 numbers for the current dots, or null if the dots do not form a page.
+  // The 8 numbers for the current dots, or null if the dots do not form a page.
   function currentMatrix(w, h) {
     const points = dots.points();
     return Geometry.quadIsValid(points) ? Geometry.solveHomography(points, w, h) : null;
   }
 
-  // ImageData from a byte view. Very old browsers reject the constructor.
-  function toImage(pixels, w, h) {
-    try {
-      return new ImageData(pixels, w, h);
-    } catch (err) {
-      const image = flatCtx.createImageData(w, h);
-      image.data.set(pixels);
-      return image;
-    }
-  }
+  // Colour rules (Enhance, greyscale, cut-off) applied to the last warped frame.
+  const toned = (w, h) => new ImageData(Warp.tone(w, h, settings.grey / 100, settings.cutoff, settings.enhance), w, h);
 
-  // ---- drawing ----
+  // Drawing
   function drawFlat() {
     if (!lastSize) return;
     const { width, height } = lastSize;
-    const pixels = Warp.tone(width, height, settings.grey / 100, settings.cutoff, settings.enhance);
-    const image = toImage(pixels, width, height);
+    const image = toned(width, height);
 
     // Full size: write straight to the visible canvas.
     if (width === flat.width && height === flat.height) {
@@ -230,6 +217,7 @@
   }
 
   function warpAndDraw() {
+    if (!hasPhoto) return;
     const w = CONFIG.flatWidth;
     const h = flatHeight();
     const matrix = currentMatrix(w, h);
@@ -238,7 +226,7 @@
       setStatus("invalid"); // keep showing the last good result
       return;
     }
-    setStatus(calmStatus());
+    setStatus(phase);
 
     resize(flat, w, h);
     resize(cropView, w, h);
@@ -259,8 +247,8 @@
       lastSize = Warp.renderForward(forward, w, h, Geometry.boundingBox(points));
       drawFlat();
     } else {
-      // Time the whole preview frame, colour rules (Enhance) included, so the
-      // preview shrinks enough to keep dragging smooth on slower devices.
+      // Time the whole preview frame, colour rules included, so the preview shrinks
+      // enough to keep dragging smooth on slower devices.
       const started = performance.now();
       lastSize = Warp.render(matrix, w, h, usePreview ? previewScale : 1);
       drawFlat();
@@ -286,7 +274,7 @@
   }
 
   // Ask for a redraw. Many calls in one frame collapse into a single render.
-  //   warp     false for greyscale/cut-off changes, which skip the heavy part
+  //   warp     false for Enhance, greyscale and cut-off changes, which skip the warp
   //   preview  true while the user is actively dragging something
   function invalidate({ warp = true, preview = false } = {}) {
     if (warp) pendingWarp = true;
@@ -302,7 +290,7 @@
     if (!rafId) rafId = requestAnimationFrame(frame);
   }
 
-  // ---- the opening demo ----
+  // The opening demo
   const toPixels = (fractions) => fractions.map(([fx, fy]) => [fx * photoDots.width, fy * photoDots.height]);
 
   function playDemo() {
@@ -321,8 +309,7 @@
     };
     // Visitors who asked for less motion get the end result straight away.
     if (reducedMotion.matches) {
-      toPixels(corners).forEach((p, i) => ((dots.points()[i][0] = p[0]), (dots.points()[i][1] = p[1])));
-      dots.draw();
+      dots.reset(corners);
       finish();
       return;
     }
@@ -346,9 +333,8 @@
     phase = "moved";
   }
 
-  // ---- saving the scan ----
-  // The download always uses the normal (backward) scan at full size, whatever the
-  // screen is showing at that moment.
+  // Saving the scan. The download always uses the normal (backward) scan at full
+  // size, whatever the screen is showing at that moment.
   function downloadScan() {
     const w = CONFIG.flatWidth;
     const h = flatHeight();
@@ -356,21 +342,21 @@
     if (!matrix) return;
 
     const size = Warp.render(matrix, w, h, 1);
-    const pixels = Warp.tone(size.width, size.height, settings.grey / 100, settings.cutoff, settings.enhance);
     const out = document.createElement("canvas");
     out.width = size.width;
     out.height = size.height;
-    out.getContext("2d").putImageData(toImage(pixels, size.width, size.height), 0, 0);
+    out.getContext("2d").putImageData(toned(size.width, size.height), 0, 0);
     Exporter.savePng(out, photoName + "-scan.png");
 
     invalidate(); // the shared buffers now hold the export, so redraw the screen from scratch
   }
 
-  // ---- loading photos ----
-  // getSource returns something drawable (an image or a bitmap).
+  // Loading photos. getSource returns something drawable (an image or a bitmap).
   async function loadPhoto(getSource, name, sample) {
+    const id = ++loadId;
     try {
       const source = await getSource();
+      if (id !== loadId) return false; // a newer load has started, drop this one
       Demo.cancel();
       const pixels = Photo.drawTo(photo, source, CONFIG.maxPhotoEdge);
       for (const canvas of [photoGrid, photoDots]) resize(canvas, photo.width, photo.height);
@@ -378,6 +364,7 @@
       Warp.setSource(pixels);
       dots.reset(CONFIG.startDots);
 
+      hasPhoto = true;
       photoName = name;
       isSample = sample;
       phase = "start";
@@ -386,17 +373,17 @@
       invalidate();
       return true;
     } catch (err) {
+      if (id !== loadId) return false;
       // A wrong file type is an ordinary mistake, not worth a console error.
-      if (err.message !== "not-image") console.error(err);
-      setStatus(err.message === "not-image" ? "notImage" : "unreadable");
+      const notImage = err.message === "not-image";
+      if (!notImage) console.error(err);
+      setStatus(sample ? "sampleError" : notImage ? "notImage" : "unreadable");
       return false;
     }
   }
 
   async function loadSample() {
-    const ok = await loadPhoto(() => Photo.fromUrl(CONFIG.sampleSrc), CONFIG.sampleName, true);
-    if (ok) playDemo();
-    return ok;
+    if (await loadPhoto(() => Photo.fromUrl(CONFIG.sampleSrc), CONFIG.sampleName, true)) playDemo();
   }
 
   const loadFile = (file) =>
@@ -432,7 +419,7 @@
     });
   }
 
-  // ---- controls ----
+  // Controls
   function buildShapeOptions() {
     const options = CONFIG.pageShapes.map((s) => new Option(s.label, s.id));
     options.push(new Option("Custom", "custom"));
@@ -448,6 +435,17 @@
       control.disabled = settings.crop;
     }
     ProofLayers.setMode(settings.crop ? "crop" : "warp");
+  }
+
+  function updateReadouts() {
+    setText(ratioValue, settings.ratio.toFixed(2));
+    setText(greyValue, settings.grey + "%");
+    setText(cutoffValue, settings.cutoff === 0 ? "Off" : String(settings.cutoff));
+    for (const input of [ratioInput, greyInput, cutoffInput]) setFill(input);
+
+    const custom = settings.shape === "custom";
+    customWrap.classList.toggle("is-open", custom);
+    customWrap.inert = !custom; // keeps the hidden slider out of the tab order
   }
 
   // Push the current settings into the page controls. Used at start and on reset.
@@ -466,53 +464,57 @@
     dots.setOutline(settings.outline);
   }
 
-  function updateReadouts() {
-    setText(ratioValue, settings.ratio.toFixed(2));
-    setText(greyValue, settings.grey + "%");
-    setText(cutoffValue, settings.cutoff === 0 ? "Off" : String(settings.cutoff));
-    for (const input of [ratioInput, greyInput, cutoffInput]) setFill(input);
-
-    const custom = settings.shape === "custom";
-    customWrap.classList.toggle("is-open", custom);
-    customWrap.inert = !custom; // keeps the hidden slider out of the tab order
+  // Flip a checkbox or move a slider the way a visitor would, so its own handler runs.
+  function flip(toggle) {
+    toggle.checked = !toggle.checked;
+    toggle.dispatchEvent(new Event("change"));
+  }
+  function setSlider(input, value) {
+    input.value = value;
+    input.dispatchEvent(new Event("input"));
+  }
+  // Plain crop greys out the other controls, so leave it before using one of them.
+  function leaveCrop() {
+    if (settings.crop) flip(cropToggle);
   }
 
   // Cards further down the page can drive the controls, so reading about forward
-  // mapping is one click away from seeing it.
+  // mapping is one click away from seeing it. Each effect switches on, or off
+  // again if it is already on.
+  const SHORTCUTS = {
+    forward() {
+      leaveCrop();
+      flip(forwardToggle);
+    },
+    bw() {
+      leaveCrop();
+      setSlider(cutoffInput, settings.cutoff > 0 ? 0 : 190);
+    },
+    grey() {
+      leaveCrop();
+      setSlider(greyInput, settings.grey > 0 ? 0 : 100);
+    },
+    crop: () => flip(cropToggle),
+    upload: () => uploadBtn.click(),
+    sample: () => demoBtn.click(),
+  };
+
   function bindShortcuts() {
     for (const button of document.querySelectorAll("[data-action]")) {
       button.addEventListener("click", () => {
-        const action = button.dataset.action;
-        // Plain crop greys out the other controls, so leave it first, unless
-        // the button is the one that switches crop itself.
-        if (settings.crop && action !== "crop") {
-          cropToggle.checked = false;
-          cropToggle.dispatchEvent(new Event("change"));
-        }
-        // Each button switches its effect on, or off again if it is already on.
-        if (action === "forward") {
-          forwardToggle.checked = !settings.forward;
-          forwardToggle.dispatchEvent(new Event("change"));
-        } else if (action === "bw") {
-          cutoffInput.value = settings.cutoff > 0 ? 0 : 190;
-          cutoffInput.dispatchEvent(new Event("input"));
-        } else if (action === "grey") {
-          greyInput.value = settings.grey > 0 ? 0 : 100;
-          greyInput.dispatchEvent(new Event("input"));
-        } else if (action === "crop") {
-          cropToggle.checked = !settings.crop;
-          cropToggle.dispatchEvent(new Event("change"));
-        } else if (action === "upload") {
-          $("upload").click();
-        } else if (action === "sample") {
-          $("demo").click();
-        }
+        SHORTCUTS[button.dataset.action]();
         // Buttons further down the page bring you back up to see the result.
         if (!button.closest("#tool")) {
           $("tool").scrollIntoView({ behavior: reducedMotion.matches ? "auto" : "smooth" });
         }
       });
     }
+  }
+
+  function shapeChanged() {
+    updateReadouts();
+    setNote(Notes.shape(CONFIG.flatWidth, flatHeight()));
+    invalidate({ preview: true });
   }
 
   function bindControls() {
@@ -524,16 +526,12 @@
       } else {
         settings.ratio = shapeRatio(settings.shape);
       }
-      updateReadouts();
-      setNote(Notes.shape(CONFIG.flatWidth, flatHeight()));
-      invalidate({ preview: true });
+      shapeChanged();
     });
 
     ratioInput.addEventListener("input", () => {
       settings.ratio = Number(ratioInput.value);
-      updateReadouts();
-      setNote(Notes.shape(CONFIG.flatWidth, flatHeight()));
-      invalidate({ preview: true });
+      shapeChanged();
     });
 
     greyInput.addEventListener("input", () => {
@@ -595,15 +593,16 @@
     downloadBtn.addEventListener("click", downloadScan);
   }
 
-  // ---- startup ----
+  // Startup
   async function boot() {
     buildShapeOptions();
     resize(flat, CONFIG.flatWidth, flatHeight());
     resize(cropView, CONFIG.flatWidth, flatHeight());
     setAspect(scanStage, CONFIG.flatWidth, flatHeight());
     Warp.reserve(CONFIG.flatWidth * Math.round(CONFIG.flatWidth * CONFIG.customRatio.max));
+    downloadBtn.disabled = true; // nothing to save until a photo is loaded
 
-    loupe = Loupe.create(loupeCanvas, photo, CONFIG.loupe);
+    loupe = Loupe.create($("loupe"), photo, CONFIG.loupe);
     dots = Dots.create(photoDots, CONFIG.startDots, {
       dotRadius: CONFIG.dotRadius,
       hitRadius: CONFIG.hitRadius,
@@ -621,13 +620,11 @@
       onRelease: () => loupe.hide(),
     });
 
-    // The crop view is switched with a checkbox handled above, so no toggle button
-    // is passed to the proof layers.
     ProofLayers.init({
       sourceCanvas: photo,
       flatCanvas: flat,
       sourceOverlay: photoGrid,
-      flatOverlay: flatGrid,
+      flatOverlay: $("flat-grid"),
       cropCanvas: cropView,
       matrixEl,
       tracerInfoEl: $("tracer"),
@@ -647,11 +644,11 @@
         JSON.stringify(dots.points().map(([x, y]) => [+(x / photo.width).toFixed(4), +(y / photo.height).toFixed(4)])),
     };
 
-    if (!(await loadSample())) setStatus("sampleError");
+    await loadSample();
   }
 
   boot().catch((err) => {
     console.error(err);
-    setStatus("sampleError");
+    setStatus("problem");
   });
 })();

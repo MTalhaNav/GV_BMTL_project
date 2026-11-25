@@ -1,9 +1,16 @@
 // The four draggable corner dots. They live on their own canvas on top of the
 // photo, so the grid overlay can be cleared and redrawn without touching them.
 const Dots = (() => {
-  // Colours come from the stylesheet (base.css), so the page has one palette.
+  // Theme colours come from the stylesheet (base.css), so the page has one palette.
   const css = (name, fallback) =>
     getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+
+  // These are drawn on top of the photo, not on the page, so they stay the same
+  // whatever the theme is: dark edges keep the dots readable on any photo.
+  const SHADOW = "rgba(11, 13, 18, 0.65)";
+  const RING = "rgba(11, 13, 18, 0.85)";
+  const WHITE = "#ffffff";
+
   const ARROWS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
 
   // canvas   same pixel size as the photo canvas
@@ -17,11 +24,17 @@ const Dots = (() => {
     const accent = css("--accent", "#c8ff3d");
     const ink = css("--accent-ink", "#0b0d12");
     const danger = css("--danger", "#ff5c6c");
+    const fontFamily = getComputedStyle(canvas).fontFamily; // numbers on the dots use the page font
+
     const points = [[0, 0], [0, 0], [0, 0], [0, 0]];
     let active = -1; // dot being dragged right now, or -1
+    let activePointer = -1; // the finger or mouse doing the dragging
     let selected = -1; // dot the keyboard controls, or -1
     let scale = 1; // canvas pixels per CSS pixel
     let showOutline = true;
+
+    // Without this a finger dragging a dot would scroll the page instead.
+    canvas.style.touchAction = "none";
 
     const clamp = (v, max) => Math.min(Math.max(v, 0), max);
 
@@ -36,10 +49,15 @@ const Dots = (() => {
 
     // The canvas is shown at a different size than its pixel size, so pointer
     // positions have to be scaled. Skipping this is the classic dragging bug.
-    // Also refreshes scale, which keeps the dots a constant on-screen size.
-    function toCanvas(e) {
+    // It also refreshes scale, which keeps the dots a constant on-screen size.
+    function measure() {
       const rect = canvas.getBoundingClientRect();
       scale = rect.width ? canvas.width / rect.width : 1;
+      return rect;
+    }
+
+    function toCanvas(e) {
+      const rect = measure();
       const scaleY = rect.height ? canvas.height / rect.height : 1;
       return [(e.clientX - rect.left) * scale, (e.clientY - rect.top) * scaleY];
     }
@@ -58,15 +76,14 @@ const Dots = (() => {
     }
 
     // Everything the magnifier needs to know about the dot being held.
-    const dragInfo = () => {
+    function dragInfo() {
       const [x, y] = points[active];
       return { index: active, x, y, cssX: x / scale, cssY: y / scale, scale };
-    };
+    }
 
     function draw() {
-      const ok = isValid(points);
-      const colour = ok ? accent : danger;
-      const textColour = ok ? ink : "#ffffff";
+      const colour = isValid(points) ? accent : danger;
+      const textColour = colour === accent ? ink : WHITE;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (showOutline) {
@@ -76,7 +93,7 @@ const Dots = (() => {
         ctx.closePath();
         // A dark line under the coloured one keeps it readable on any photo.
         ctx.lineWidth = 5 * scale;
-        ctx.strokeStyle = "rgba(11, 13, 18, 0.65)";
+        ctx.strokeStyle = SHADOW;
         ctx.stroke();
         ctx.lineWidth = 2 * scale;
         ctx.strokeStyle = colour;
@@ -91,13 +108,12 @@ const Dots = (() => {
       points.forEach(([x, y], i) => {
         const held = i === active;
         const r = dotRadius * scale * (held ? 1.25 : 1); // grows a little when grabbed
-        ctx.font = `700 ${Math.round(r * 1.05)}px "Manrope", "Segoe UI", Arial, sans-serif`;
 
-        if ((showFocus && i === selected) || held) {
+        if (held || (showFocus && i === selected)) {
           ctx.beginPath();
           ctx.arc(x, y, r + 5 * scale, 0, Math.PI * 2);
           ctx.lineWidth = 2 * scale;
-          ctx.strokeStyle = "#ffffff";
+          ctx.strokeStyle = WHITE;
           ctx.stroke();
         }
 
@@ -106,20 +122,24 @@ const Dots = (() => {
         ctx.fillStyle = colour;
         ctx.fill();
         ctx.lineWidth = 2.5 * scale;
-        ctx.strokeStyle = "rgba(11, 13, 18, 0.85)";
+        ctx.strokeStyle = RING;
         ctx.stroke();
+
+        ctx.font = `700 ${Math.round(r * 1.05)}px ${fontFamily}`;
         ctx.fillStyle = textColour;
         ctx.fillText(String(i + 1), x, y + scale * 0.5);
       });
     }
 
     canvas.addEventListener("pointerdown", (e) => {
+      if (active >= 0) return; // already holding a dot with another finger
       const [x, y] = toCanvas(e);
       const hit = nearest(x, y);
       if (hit < 0) return;
       active = selected = hit;
+      activePointer = e.pointerId;
       // Capture keeps the drag alive when the pointer leaves the canvas.
-      if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+      canvas.setPointerCapture(e.pointerId);
       canvas.style.cursor = "grabbing";
       e.preventDefault();
       canvas.focus({ preventScroll: true }); // so the arrow keys work straight away
@@ -133,6 +153,7 @@ const Dots = (() => {
         if (e.pointerType === "mouse") canvas.style.cursor = nearest(x, y) >= 0 ? "grab" : "default";
         return;
       }
+      if (e.pointerId !== activePointer) return;
       // Keep the dot inside the photo, otherwise the page could point at nothing.
       points[active][0] = clamp(x, canvas.width);
       points[active][1] = clamp(y, canvas.height);
@@ -141,13 +162,13 @@ const Dots = (() => {
       onDrag(dragInfo());
     });
 
-    const release = () => {
-      if (active < 0) return;
+    function release(e) {
+      if (active < 0 || e.pointerId !== activePointer) return;
       active = -1;
       canvas.style.cursor = "grab";
       draw();
       onRelease();
-    };
+    }
     canvas.addEventListener("pointerup", release);
     canvas.addEventListener("pointercancel", release);
 
@@ -172,13 +193,10 @@ const Dots = (() => {
     canvas.addEventListener("blur", draw);
 
     // Redraw when the layout changes size so the dots keep their on-screen size.
-    const refresh = () => {
-      const rect = canvas.getBoundingClientRect();
-      scale = rect.width ? canvas.width / rect.width : 1;
+    new ResizeObserver(() => {
+      measure();
       draw();
-    };
-    if ("ResizeObserver" in window) new ResizeObserver(refresh).observe(canvas);
-    else window.addEventListener("resize", refresh);
+    }).observe(canvas);
 
     place(start);
     draw();
