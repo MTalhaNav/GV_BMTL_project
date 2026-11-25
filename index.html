@@ -301,19 +301,9 @@ y = (h3·u + h4·v + h5) / (h6·u + h7·v + 1)</pre>
               <p><strong>One redraw per frame.</strong> If several things change at once, <code>invalidate()</code> collects them and redraws once, on the screen's next refresh. That stops the page from doing the same work many times.</p>
               <p><strong>Four stages.</strong> The page goes through start, demo, ready and moved. If you grab a dot while the opening animation plays, the animation stops and hands control to you.</p>
               <p><strong>Downloads are always full quality.</strong> Download redraws the scan at full size with your current settings, even if you were looking at the small fast preview.</p>
+              <p><strong>The proof panels.</strong> The grid, the matrix and the pixel tracer are drawn by <code>phase4.js</code>. It uses the engine's <code>position_of_pixel</code> to show exactly where each scan pixel came from, and labels the matrix "perspective" when the page is tilted or "affine" when it is only stretched or turned.</p>
               <p><strong>One colour list.</strong> The colours of the dots, outline and magnifier come from the colour list at the top of <code>base.css</code>, so changing a colour there changes it everywhere.</p>
               <p><strong>Keyboard.</strong> Click the photo, press 1 to 4 to pick a dot, then use the arrow keys to move it. Hold Shift to move 10 times further.</p>
-            </div>
-          </details>
-          <details class="reveal-on-scroll" data-reveal="left">
-            <summary>Under the hood</summary>
-            <div class="deeper-body">
-              <p>All the state lives in one <code>settings</code> object in <code>main.js</code>, and the drawing code never reads the page. <code>invalidate({warp, preview})</code> gathers every change into a single <code>requestAnimationFrame</code>, so many changes in one frame cost one redraw.</p>
-              <p>The page moves through four phases: start, demo, ready and moved. Grabbing a dot during the demo cancels the animation.</p>
-              <p>Download always re-renders the normal backward scan at full size with the current look settings, then calls <code>invalidate()</code>, because the shared buffers were overwritten.</p>
-              <p><code>ProofLayers</code> draws the grids, the matrix and the pixel tracer: <code>init({sourceCanvas, flatCanvas, sourceOverlay, flatOverlay, cropCanvas, matrixEl, tracerInfoEl, mode})</code>, <code>update({h, flatWidth, flatHeight})</code> and <code>setMode('warp' | 'crop')</code>. It uses the engine's <code>position_of_pixel(h, q, v)</code>, and marks the matrix as perspective or affine.</p>
-              <p>The colours of the dots, outline and magnifier are read from the CSS variables at startup, so <code>:root</code> in <code>base.css</code> is the single palette.</p>
-              <p>Keyboard: focus the photo, press 1 to 4 to pick a dot, and use the arrow keys to nudge it (hold Shift for 10 times further).</p>
             </div>
           </details>
 
