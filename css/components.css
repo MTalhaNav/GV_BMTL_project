@@ -93,7 +93,7 @@ noscript .status::before { display: none; }
   overflow: hidden;
   transition: box-shadow 0.2s;
 }
-.stage:hover { box-shadow: inset 0 0 0 1px #3a4358; }
+.stage:hover { box-shadow: inset 0 0 0 1px #4a4a4a; }
 .frame {
   position: relative;
   width: min(100%, calc(var(--stage-h) * var(--ar, 1.333)));
@@ -215,8 +215,8 @@ noscript .status::before { display: none; }
   animation: pulse 2.2s infinite;
 }
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(200, 255, 61, 0.55); }
-  70%, 100% { box-shadow: 0 0 0 9px rgba(200, 255, 61, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(252, 228, 42, 0.55); }
+  70%, 100% { box-shadow: 0 0 0 9px rgba(252, 228, 42, 0); }
 }
 .flash { animation: flash 0.4s ease; }
 @keyframes flash { from { opacity: 0.15; transform: translateY(5px); } to { opacity: 1; transform: none; } }
@@ -239,7 +239,7 @@ select {
   padding: 8px 38px 8px 14px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23c8ff3d' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  background: var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%23fce42a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
   color: var(--text);
   font: inherit;
   font-weight: 700;
@@ -334,7 +334,7 @@ input[type="range"]:disabled { opacity: 0.35; cursor: not-allowed; }
   border-radius: var(--radius);
   transition: border-color 0.2s, background 0.2s;
 }
-.tile:hover { border-color: var(--accent); background: #191e29; }
+.tile:hover { border-color: var(--accent); background: rgba(255, 255, 255, 0.08); }
 .tile-no { font: 800 3.2rem/1 var(--font-display); color: var(--accent); }
 .tile p { color: var(--muted); }
 .tile .btn { align-self: flex-start; margin-top: auto; }
@@ -453,28 +453,22 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
 .label-tip { display: inline-flex; align-items: center; }
 .slider { width: 196px; }
 
-/* ---- the story: a numbered path with a picture per step ---- */
+/* ---- the story: stops on a map ----
+   Steps sit left and right like stops on a route. Each stop is one card with its
+   picture on top, and a dashed route (drawn by js/route.js) winds between the
+   numbered pins. */
 .story { padding: 88px 0; border-top: 1px solid var(--line); }
-.story-path { position: relative; margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; }
-.story-path::before {
-  content: "";
-  position: absolute;
-  left: 21px;
-  top: 24px;
-  bottom: 24px;
-  width: 2px;
-  background: linear-gradient(var(--accent), var(--line));
-}
-.story-step {
-  position: relative;
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) minmax(0, 260px);
-  gap: 22px;
-  align-items: center;
-}
+.story-path { position: relative; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 28px; }
+.map-route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: 0; }
+.map-route path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 2 10; opacity: 0.7; }
+.story-step { position: relative; z-index: 1; width: min(560px, 62%); display: block; }
+.story-step:nth-child(even) { align-self: flex-start; }
+.story-step:nth-child(odd) { align-self: flex-end; }
 .story-no {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  z-index: 2;
+  top: -16px;
+  left: -16px;
   display: grid;
   place-items: center;
   width: 44px;
@@ -485,36 +479,33 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
   font: 800 1.1rem var(--font-display);
   box-shadow: 0 0 0 6px var(--bg);
 }
-.story-text { padding: 20px 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.story-step:nth-child(odd) .story-no { left: auto; right: -16px; }
+.story-card { border-radius: var(--radius); overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.11);
+  /* Glassy grey on an opaque base, so the route passes behind the card, not through it. */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)), #0f0f0f;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09); }
+.story-card .story-pic { display: block; width: 100%; height: auto; max-height: 220px; padding: 14px 14px 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.story-card .story-text { padding: 16px 22px 20px; background: none; border: 0; border-radius: 0; box-shadow: none; }
 .story-text h3 { margin-bottom: 8px; font-size: 1.15rem; }
 .story-text p { color: var(--muted); }
 .story-text em { font-style: normal; color: var(--text); }
-.story-pic { width: 100%; height: auto; padding: 10px; background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius); }
-.js .story-step.reveal-on-scroll:nth-child(even) { transition-delay: 0.06s; }
+
+/* "Read more in detail" */
+.story-text details.more { margin-top: 12px; border: 0; }
+.story-text details.more summary { display: inline-flex; padding: 0; font: 700 0.9rem var(--font-sans); color: var(--accent); letter-spacing: 0; }
+.story-text details.more summary::after { content: "\2193"; width: auto; height: auto; margin-left: 6px; background: none; color: var(--accent); font-size: 0.9rem; }
+.story-text details.more[open] summary::after { content: "\2191"; background: none; color: var(--accent); }
+.more-body { margin-top: 10px; padding: 12px 14px; border-left: 2px solid var(--accent); background: rgba(255, 255, 255, 0.04); border-radius: 0 8px 8px 0; font-size: 0.92rem; }
+.more-body p { color: var(--muted); }
+.more-body p + p { margin-top: 8px; }
+.more-body code, .deeper-body code { color: var(--accent); font: 500 0.82em var(--font-mono); overflow-wrap: anywhere; }
+
 @media (max-width: 760px) {
   .story { padding: 56px 0; }
-  .story-step { grid-template-columns: 44px minmax(0, 1fr); gap: 14px; }
-  .story-pic { grid-column: 2; max-width: 320px; }
-  .story-no { align-self: start; margin-top: 14px; }
+  .story-path { gap: 34px; }
+  .story-step { width: 88%; }
 }
 
-/* ---- decorative trails: dashed paths with a small lime paper plane ---- */
-.trail { position: absolute; z-index: -1; pointer-events: none; overflow: visible; }
-.trail path {
-  fill: none;
-  stroke: rgba(155, 164, 186, 0.45);
-  stroke-width: 1.6;
-  stroke-linecap: round;
-  stroke-dasharray: 7 11;
-}
-.trail.is-visible path { animation: trail-drift 6s linear infinite; }
-@keyframes trail-drift { to { stroke-dashoffset: -72; } }
-.hero, .section-head { position: relative; }
-.trail-hero { right: 4%; bottom: 8px; width: 340px; height: 230px; }
-.trail-story { right: 24%; top: -24px; width: 300px; height: 150px; }
-.trail-how { right: 8%; top: -20px; width: 250px; height: 190px; }
-.section-head { isolation: isolate; }
-@media (max-width: 900px) { .trail { display: none; } }
 
 /* ---- scroll reveal: each piece slides in from its own side ---- */
 .js .reveal-on-scroll[data-reveal="left"] { transform: translateX(-36px); }
@@ -527,15 +518,14 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
 
 /* Story: the line grows down, then each step's number pops,
    its text slides in from the left and its picture from the right. */
-.js .story-path::before { transform: scaleY(0); transform-origin: top; transition: transform 1.6s cubic-bezier(0.3, 0.7, 0.2, 1); }
-.js .story-path.is-visible::before { transform: none; }
+.js .map-route path { stroke-dasharray: 2 10; }
+.js .story-path .map-route { clip-path: inset(0 0 100% 0); transition: clip-path 1.8s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.js .story-path.is-visible .map-route { clip-path: inset(0 0 0 0); }
 .js .story-step.reveal-on-scroll { opacity: 1; transform: none; }
 .js .story-step .story-no { transform: scale(0.3); opacity: 0; transition: transform 0.5s cubic-bezier(0.3, 1.6, 0.5, 1), opacity 0.3s; }
-.js .story-step .story-text { transform: translateX(-40px); opacity: 0; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.12s, opacity 0.6s 0.12s; }
-.js .story-step .story-pic { transform: translateX(40px); opacity: 0; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.24s, opacity 0.6s 0.24s; }
+.js .story-step .story-card { transform: translateY(24px); opacity: 0; transition: transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) 0.24s, opacity 0.6s 0.24s; }
 .js .story-step.is-visible .story-no,
-.js .story-step.is-visible .story-text,
-.js .story-step.is-visible .story-pic { transform: none; opacity: 1; }
+.js .story-step.is-visible .story-card { transform: none; opacity: 1; }
 
 /* ---- GitHub mark ---- */
 .gh-link { display: inline-flex; align-items: center; gap: 8px; }
@@ -588,12 +578,8 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
   100% { opacity: 0; transform: translate(72px, 72px); }
 }
 
-/* Cards lift a little when you point at them. */
-.story-text, .story-pic { transition: border-color 0.2s, translate 0.2s; }
-.story-step:hover .story-text, .story-step:hover .story-pic { border-color: #3a4358; translate: 0 -3px; }
 
 /* ---- the extras story line ---- */
-.extras { background: radial-gradient(ellipse 45% 35% at 75% 30%, rgba(238, 241, 248, 0.10), transparent 70%), radial-gradient(ellipse 35% 30% at 20% 75%, rgba(200, 255, 61, 0.09), transparent 70%); }
 .story-try { margin-top: 14px; }
 .js .story-step .sp-grey { fill: var(--c); }
 .js .story-step.is-visible .sp-grey { animation: sp-grey 3.2s calc(0.6s + var(--i) * 80ms) ease-in-out infinite; }
@@ -610,49 +596,146 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
 .story-pic .sp-fly { transform-box: view-box; transform-origin: 0 0; }
 
 /* ---- closing call to play ---- */
-.play { padding: 96px 0 104px; border-top: 1px solid var(--line); text-align: center;
-  background: radial-gradient(ellipse 50% 60% at 50% 40%, rgba(238, 241, 248, 0.10), transparent 70%), radial-gradient(ellipse 30% 40% at 60% 65%, rgba(200, 255, 61, 0.10), transparent 70%); }
+.play { padding: 96px 0 104px; border-top: 1px solid var(--line); text-align: center; }
 .play h2 { font-size: clamp(2rem, 5vw, 3.4rem); }
 .play-inner > p { margin: 18px auto 0; max-width: 46ch; color: var(--muted); font-size: 1.1rem; }
 .play-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
 .play-actions .btn { min-height: 46px; padding: 10px 24px; font-size: 0.95rem; }
 .play .play-note { font-size: 0.85rem; margin-top: 18px; }
 
-/* ---- glass: the dark boxes become frosted glass ----
-   A see-through white tint, a blur of whatever glows behind, a thin bright edge
-   and a highlight along the top, like light catching the edge of a glass sheet. */
-:root {
-  --glass: rgba(255, 255, 255, 0.045);
-  --glass-strong: rgba(255, 255, 255, 0.07);
-  --glass-edge: rgba(255, 255, 255, 0.11);
-  --glass-shine: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 -1px 0 rgba(255, 255, 255, 0.02);
-  --glass-blur: blur(16px) saturate(150%);
+/* ---- control tabs: Adjust, Look, Compare (one at a time) ---- */
+.dock { flex-direction: column; gap: 16px; }
+.dock-tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 4px;
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 999px;
 }
-.site-head { background: rgba(11, 13, 18, 0.55); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); border-bottom-color: var(--glass-edge); }
-/* No live blur on these boxes: blurring many boxes on every scroll frame made the
-   page lag. A light-to-clear tint gives the same glass look on a dark page. */
-.status, .bridge, .dock, .tile, .story-text, .story-pic, .stage, .live, .equation {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
-  border-color: var(--glass-edge);
-  box-shadow: var(--glass-shine), 0 18px 40px rgba(0, 0, 0, 0.28);
+.dock-tab {
+  min-height: 36px;
+  padding: 6px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: 700 0.875rem var(--font-sans);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
 }
-.tip {
-  background: rgba(30, 35, 48, 0.82);
-  border-color: var(--glass-edge);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shine), 0 18px 40px rgba(0, 0, 0, 0.35);
+.dock-tab:hover { color: var(--text); }
+.dock-tab[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+.dock-panel .dock-row { gap: 12px 24px; }
+.dock-panel .dock-label { margin: 0; }
+.js .dock-panel:not([hidden]) { animation: flash 0.25s ease; }
+
+/* ---- falling pixel squares behind "Now play along" ----
+   Faint grey squares: the outlined ones are the page's pixel grid, the filled
+   ones are pixels that broke off and are slowly tumbling. */
+.play { position: relative; overflow: hidden; isolation: isolate; }
+.bits { position: absolute; z-index: -1; top: 50%; width: min(34vw, 440px); height: auto; translate: 0 -50%; pointer-events: none; }
+.bits-left { left: -10px; }
+.bits-right { right: -10px; }
+.bits .grid, .bits .grid rect { fill: none; stroke: rgba(10, 10, 10, 0.20); stroke-width: 2.5; stroke-linejoin: round; }
+.bits .fill rect { fill: rgba(10, 10, 10, 0.16); }
+.bits .arc { fill: none; stroke: rgba(10, 10, 10, 0.22); stroke-width: 2.5; stroke-linecap: round; }
+.bits .bit { transform-box: fill-box; transform-origin: center; animation: bit-drift 7s var(--d) ease-in-out infinite; }
+@keyframes bit-drift {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(14px) rotate(var(--r)); }
 }
-.stage { box-shadow: var(--glass-shine), inset 0 0 0 1px var(--glass-edge), 0 18px 40px rgba(0, 0, 0, 0.28); }
-.stage:hover { box-shadow: var(--glass-shine), inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 18px 40px rgba(0, 0, 0, 0.28); }
-.live, .equation { box-shadow: var(--glass-shine); }
-.tile:hover { background: var(--glass-strong); border-color: rgba(200, 255, 61, 0.55); }
-.h-cell { background: rgba(255, 255, 255, 0.06); box-shadow: var(--glass-shine); }
-.h-perspective { background: var(--accent); box-shadow: 0 0 18px rgba(200, 255, 61, 0.35); }
-.btn-outline, .info, select {
-  background-color: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: var(--glass-shine);
+@media (max-width: 760px) { .bits { width: 46vw; opacity: 0.6; } .bits-left { left: -40px; } .bits-right { right: -40px; } }
+/* Story pictures slide in from the right; keep them from widening the page on phones. */
+.story { overflow-x: clip; }
+
+/* ---- school logo in the footer, beside the GitHub link ---- */
+.foot-links { display: flex; align-items: center; gap: 16px; }
+.school-logo { flex: none; width: 40px; height: 40px; border-radius: 10px; object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
+.foot-row { align-items: center; }
+
+/* ---- 10%: glassy grey cards and panels ----
+   A see-through white tint, a light edge and a bright line along the top.
+   No live blur, so scrolling stays smooth. */
+.status, .bridge, .dock, .tile, .story-text, .story-pic, .live, .equation, .dock-tabs {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03));
+  border-color: rgba(255, 255, 255, 0.11);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
 }
-.btn-primary { box-shadow: 0 0 24px rgba(200, 255, 61, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.5); }
-.story-step:hover .story-text, .story-step:hover .story-pic { border-color: rgba(255, 255, 255, 0.22); }
+.stage { background: rgba(255, 255, 255, 0.04); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.11), inset 0 1px 0 rgba(255, 255, 255, 0.09); }
+.h-cell, .btn-outline, select, .info { background-color: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.13); }
+
+/* ---- 30%: yellow ---- */
+.section-head h2, .panel h2, .bridge h2 { color: var(--accent); }
+.tile h3, .story-text h3 { color: var(--text); }
+
+/* The closing section: black, with yellow text (easier on the eyes than a yellow band). */
+.play { background: var(--bg); color: var(--text); border-top: 1px solid var(--line); }
+.play h2, .play h2 em { color: var(--accent); }
+.play-inner > p { color: var(--muted); }
+.play .play-note { color: var(--muted); }
+.bits .grid, .bits .grid rect { stroke: rgba(255, 255, 255, 0.13); }
+.bits .fill rect { fill: rgba(255, 255, 255, 0.09); }
+.bits .arc { stroke: rgba(255, 255, 255, 0.15); }
+.h-cell.h-perspective { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+
+/* ---- first-time hint beside dot 1 ---- */
+.drag-hint {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  width: max-content;
+  max-width: min(210px, 70%);
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.35;
+  transform: translate(10px, 34px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  animation: hint-in 0.5s 0.4s both, hint-bob 2.4s 1s ease-in-out infinite;
+}
+/* A small pointer from the bubble up to the dot. */
+.drag-hint::before {
+  content: "";
+  position: absolute;
+  left: 10px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  transform: rotate(45deg);
+}
+.drag-hint.is-leaving { animation: hint-out 0.5s ease forwards; }
+@keyframes hint-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+@keyframes hint-bob { 50% { translate: 0 -4px; } }
+@keyframes hint-out { to { opacity: 0; translate: 0 -6px; } }
+
+/* ---- story step 4: compass lines from one pixel ---- */
+.js .story-step .cmp-ray, .js .story-step .cmp-go { stroke-dasharray: 1; stroke-dashoffset: 1; }
+.js .story-step .cmp-lbl, .js .story-step .cmp-target { opacity: 0; }
+.js .story-step.is-visible .cmp-ray { animation: cmp-draw 0.35s calc(0.4s + var(--i) * 70ms) ease-out forwards; }
+.js .story-step.is-visible .cmp-lbl { animation: sp-fade 0.4s 0.9s forwards; }
+.js .story-step.is-visible .cmp-go { animation: cmp-draw 0.7s 1.3s ease-out forwards; }
+.js .story-step.is-visible .cmp-target { animation: sp-fade 0.3s 1.9s forwards, sp-pulse 1.4s 2.2s ease-in-out infinite; }
+@keyframes cmp-draw { to { stroke-dashoffset: 0; } }
+
+/* ---- plane trails in the empty space beside each map stop ---- */
+.trail { position: absolute; pointer-events: none; overflow: visible; }
+.trail path { fill: none; stroke: rgba(255, 255, 255, 0.22); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 7 11; }
+.story-step.is-visible .trail path { animation: trail-drift 6s linear infinite; }
+@keyframes trail-drift { to { stroke-dashoffset: -72; } }
+.trail-side { top: 22%; width: min(260px, 22vw); height: auto; z-index: 0; }
+/* The empty side is the opposite side to the card. */
+.story-step:nth-child(even) .trail-side { left: calc(100% + 8vw); }
+.story-step:nth-child(odd) .trail-side { right: calc(100% + 8vw); transform: scaleX(-1); }
+@media (max-width: 900px) { .trail-side { display: none; } }
+
+/* Hint next to the "i" on the Matrix heading (added by Syed Ibraheem). */
+.info-hint { top: 52px; left: 96px; transform: none; }
+.info-hint::before { left: 14px; }
+.info-hint b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-ink); color: var(--accent); font-size: 0.75rem; }
