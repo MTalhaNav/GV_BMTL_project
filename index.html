@@ -91,6 +91,7 @@
         </section>
         <aside class="bridge" aria-labelledby="matrix-title">
           <h2 id="matrix-title">Matrix <button class="info" type="button" popovertarget="tip-matrix" aria-label="What does matrix mean?">i</button></h2>
+          <p id="info-hint" class="drag-hint info-hint" hidden>Tap an <b>i</b> to see what a word means</p>
           <div id="matrix" class="h-matrix" aria-label="Matrix of nine numbers"></div>
           <span id="matrix-tag" class="tag"></span>
           <p class="bridge-note">The two yellow cells are the perspective terms <button class="info" type="button" popovertarget="tip-perspective" aria-label="What does perspective mean?">i</button>. Both are zero when the page was only rotated or sheared.</p>
@@ -259,32 +260,49 @@ y = (h3·u + h4·v + h5) / (h6·u + h7·v + 1)</pre>
       <div class="wrap split">
         <div class="section-head reveal-on-scroll">
           <h2>Going deeper</h2>
-          <p>The reasoning behind the choices.</p>
+          <p>Why we built it this way, in plain words.</p>
         </div>
         <div class="deeper-list reveal-on-scroll">
           <!-- To add a topic, copy one details block and change the summary and the paragraphs. -->
+          <!-- Going deeper text rewritten in plain language by Syed Ibraheem (25 Nov 2026) -->
           <details class="reveal-on-scroll" data-reveal="left">
             <summary>Why eight numbers and not nine</summary>
             <div class="deeper-body">
-              <p>A matrix like this is only defined up to scale. Multiply all nine numbers by the same amount and the mapping is identical, because the factor cancels in the division. So the last number is fixed at 1 and the other eight are solved for.</p>
+              <p>The map is really a grid of nine numbers, but only their sizes compared to each other matter. If you doubled all nine, every pixel would still land in exactly the same place, because the doubling cancels out when the formula divides.</p>
+              <p>A recipe works the same way: 2 cups of flour to 1 of sugar makes the same cake mix as 4 to 2. So we fix the last number at 1 and only solve for the other eight. That is why 4 corners, with 2 clues each, are exactly enough.</p>
             </div>
           </details>
           <details class="reveal-on-scroll" data-reveal="left">
-            <summary>Why sample at pixel centres and blend four pixels</summary>
+            <summary>Why the scan looks smooth, not blocky</summary>
             <div class="deeper-body">
-              <p>Photo pixel i has its centre at i + 0.5, so the lookup shifts by half a pixel before blending. Bilinear blending mixes the four surrounding pixels by how close the lookup point is to each one. It costs four reads per colour channel and avoids the jagged edges of copying the nearest pixel. While you drag, a smaller preview keeps it fast, sized to the speed of your device.</p>
+              <p>When a pixel of the scan asks the photo for its colour, the answer is almost never exactly on one photo pixel. It usually falls somewhere between four of them.</p>
+              <p>Copying just the nearest one would make edges look jagged, like stairs. Instead we mix the four neighbours, giving more weight to whichever is closest. We also measure from the middle of each pixel, not its corner, so the whole picture doesn't shift by half a pixel.</p>
+              <p>While you drag, we draw a smaller version first so it stays fast, then swap in the full-size scan a moment after you stop.</p>
             </div>
           </details>
           <details class="reveal-on-scroll" data-reveal="left">
             <summary>What goes wrong when the dots are wrong</summary>
             <div class="deeper-body">
-              <p>The bottom line of the equations can reach zero, and where it does the position shoots off to infinity. A convex quad keeps it positive across the whole page. That is why the outline turns red and the scan freezes when the shape folds in or crosses itself.</p>
+              <p>The formula divides by a number that depends on where you are on the page. If the dots are placed badly, that number can reach zero somewhere, and dividing by zero sends the pixel off to infinity.</p>
+              <p>As long as the four dots make a proper page shape, with no edges crossing and no corner pushed inwards, that number never reaches zero. So when the shape folds in or crosses itself, the outline turns red and the scan pauses until you fix it.</p>
             </div>
           </details>
           <details class="reveal-on-scroll" data-reveal="left">
             <summary>What we left out: finding the corners automatically</summary>
             <div class="deeper-body">
-              <p>Real scanner apps look for the page edges themselves, usually by detecting edges and picking the largest four-sided shape. We left it out on purpose. It is a separate problem from the stretching, and a wrong guess would hide the maths this page is about.</p>
+              <p>Scanner apps on your phone find the page corners for you. They look for strong edges in the photo and pick the biggest four-sided shape.</p>
+              <p>We left that out on purpose. Finding the corners is a different problem from flattening the page, and if the app guessed wrong it would hide the maths this page is meant to show. Here, you are the corner finder.</p>
+            </div>
+          </details>
+          <details class="reveal-on-scroll" data-reveal="left">
+            <summary>Under the hood</summary>
+            <div class="deeper-body">
+              <p><strong>One place for settings.</strong> Every choice you make, like the dots, Enhance or black and white, is stored in one <code>settings</code> object in <code>main.js</code>. The drawing code reads from there, never from the buttons directly.</p>
+              <p><strong>One redraw per frame.</strong> If several things change at once, <code>invalidate()</code> collects them and redraws once, on the screen's next refresh. That stops the page from doing the same work many times.</p>
+              <p><strong>Four stages.</strong> The page goes through start, demo, ready and moved. If you grab a dot while the opening animation plays, the animation stops and hands control to you.</p>
+              <p><strong>Downloads are always full quality.</strong> Download redraws the scan at full size with your current settings, even if you were looking at the small fast preview.</p>
+              <p><strong>One colour list.</strong> The colours of the dots, outline and magnifier come from the colour list at the top of <code>base.css</code>, so changing a colour there changes it everywhere.</p>
+              <p><strong>Keyboard.</strong> Click the photo, press 1 to 4 to pick a dot, then use the arrow keys to move it. Hold Shift to move 10 times further.</p>
             </div>
           </details>
           <details class="reveal-on-scroll" data-reveal="left">
@@ -361,5 +379,6 @@ y = (h3·u + h4·v + h5) / (h6·u + h7·v + 1)</pre>
   <script src="js/tips.js?v=36" defer></script>
   <script src="js/dock.js?v=36" defer></script>
   <script src="js/route.js?v=36" defer></script>
+  <script src="js/hints.js?v=37" defer></script>
 </body>
 </html>

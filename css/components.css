@@ -734,3 +734,8 @@ details[open] .deeper-body { animation: flash 0.3s ease; }
 .story-step:nth-child(even) .trail-side { left: calc(100% + 8vw); }
 .story-step:nth-child(odd) .trail-side { right: calc(100% + 8vw); transform: scaleX(-1); }
 @media (max-width: 900px) { .trail-side { display: none; } }
+
+/* Hint next to the "i" on the Matrix heading (added by Syed Ibraheem). */
+.info-hint { top: 52px; left: 96px; transform: none; }
+.info-hint::before { left: 14px; }
+.info-hint b { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--accent-ink); color: var(--accent); font-size: 0.75rem; }
