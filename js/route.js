@@ -1,7 +1,5 @@
-// Added by Syed Ibraheem (24 Nov 2026)
 // The story steps sit left and right like stops on a map. This draws the dashed
-// route that winds from one numbered stop to the next. It is redrawn whenever the
-// layout changes (resizing, a "Read more" opening), because the stops move.
+// route that winds from one numbered stop to the next.
 (() => {
   const lists = [...document.querySelectorAll(".story-path")];
   if (!lists.length) return;

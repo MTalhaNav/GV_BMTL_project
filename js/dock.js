@@ -1,7 +1,5 @@
-// Added by Syed Ibraheem (24 Nov 2026)
 // The controls under the scanner are split into three tabs: Adjust, Look and
-// Compare. Only one tab's controls show at a time, so the page never shows a wall
-// of buttons. Arrow keys move between tabs, like any tab bar.
+// Compare. Only one tab's controls show at a time
 (() => {
   const tabs = [...document.querySelectorAll(".dock-tab")];
   if (!tabs.length) return;
